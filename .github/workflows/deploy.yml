@@ -29,6 +29,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
+          version: 10
           run_install: false
 
       - name: Get pnpm store directory
@@ -99,11 +100,11 @@ jobs:
           fi
           ssh root@${SSH_HOST} "bash -c '
             set -euo pipefail
-            mkdir -p /opt/sbifpt
-            cd /opt/sbifpt
-            if [ -d .git ]; then
-              git pull origin main
+            if [ ! -d /opt/sbifpt/.git ]; then
+              git clone https://github.com/khanhduong22/sbifpt.git /opt/sbifpt
             fi
+            cd /opt/sbifpt
+            git pull origin main
             docker compose config >/dev/null
             docker compose up -d --build --remove-orphans
             docker exec caddy caddy reload --config /etc/caddy/Caddyfile || true
