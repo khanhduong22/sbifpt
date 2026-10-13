@@ -48,6 +48,7 @@ jobs:
 
       - name: Generate Prisma client & seed
         run: |
+          echo 'DATABASE_URL="file:./dev.db"' > packages/db/.env
           pnpm --filter @sbifpt/db generate
           pnpm --filter @sbifpt/db push --accept-data-loss
           pnpm --filter @sbifpt/db seed
