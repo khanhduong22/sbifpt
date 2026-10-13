@@ -12,13 +12,9 @@ import {
   UserX,
   Clock,
   TrendingDown,
-  DollarSign,
   Languages,
-  CheckCircle,
-  ExternalLink,
-  ChevronDown,
-  Shield,
-  Eye,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 export const OdcReconcileView: React.FC = () => {
@@ -27,7 +23,6 @@ export const OdcReconcileView: React.FC = () => {
 
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedLang, setSelectedLang] = useState<'ja' | 'en' | 'vi'>('ja');
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['odc-reconcile', statusFilter],
@@ -40,9 +35,9 @@ export const OdcReconcileView: React.FC = () => {
     onSuccess: (result) => {
       addToast({
         type: 'success',
-        title: 'Auto-Reconciliation Complete',
+        title: 'Đối soát Tự Động Hoàn Tất',
         message: result.message,
-        duration: 6000,
+        duration: 5000,
       });
       // Invalidate queries so tables refresh instantly
       queryClient.invalidateQueries({ queryKey: ['odc-reconcile'] });
@@ -52,7 +47,7 @@ export const OdcReconcileView: React.FC = () => {
     onError: (err) => {
       addToast({
         type: 'error',
-        title: 'Auto-Reconciliation Failed',
+        title: 'Lỗi Đối soát Tự Động',
         message: String(err),
       });
     },
@@ -60,23 +55,23 @@ export const OdcReconcileView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-400">
-        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-        <p className="text-sm font-medium">Inspecting ODC Badge Swipes vs Timesheet WBS Records...</p>
+      <div className="flex flex-col items-center justify-center min-h-[350px] text-slate-400">
+        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-xs font-medium">Đang đối chiếu dữ liệu quẹt thẻ ODC vs Bảng chấm công WBS...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="p-6 rounded-xl bg-rose-950/30 border border-rose-500/40 text-rose-300">
-        <h3 className="font-bold text-base mb-1">Failed to load ODC Reconciliation</h3>
-        <p className="text-sm">{String(error || 'No data')}</p>
+      <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+        <h3 className="font-bold text-sm mb-1">Không thể tải dữ liệu Đối soát ODC</h3>
+        <p>{String(error || 'Không có dữ liệu')}</p>
         <button
           onClick={() => refetch()}
-          className="mt-4 px-4 py-2 rounded-lg bg-rose-900 hover:bg-rose-800 text-white text-xs font-semibold"
+          className="mt-3 px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
         >
-          Retry
+          Thử lại
         </button>
       </div>
     );
@@ -84,266 +79,242 @@ export const OdcReconcileView: React.FC = () => {
 
   const { summary, items } = data;
 
-  const totalFlaggedCount =
-    summary.overLoggedCount + summary.underLoggedCount + summary.missingSwipeCount;
-
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      {/* Top Banner with Action Buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-navy-900 via-navy-850 to-navy-900 border border-slate-200 dark:border-navy-800 shadow-xl">
+    <div className="space-y-5">
+      {/* Enterprise Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200 dark:border-gray-800">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono tracking-wider uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              J-SOX 404 & FISC ODC Guard
-            </span>
-            <span className="text-xs text-slate-400 font-mono">
-              FISC Physical Security vs Timesheet Discrepancy Engine
-            </span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
-            Japanese ODC Audit & Reconciliation Center
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>Đối Soát Quẹt Thẻ Turnstile ODC vs Bảng Công WBS</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-3xl">
-            Automated compliance reconciliation cross-checking turnstile RFID badge logs in Hanoi ODC
-            against billable WBS hours. Prevents client over-invoicing and project revenue leakage.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Tự động kiểm soát bất đối xứng giữa cổng phân làn RFID Hà Nội và giờ tính phí Tokyo. Tuân thủ FISC &amp; J-SOX 404.
           </p>
         </div>
 
-        {/* Action Buttons: Auto-Reconcile & J-SOX Proof Pack */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {/* Prominent 1-Click Auto-Reconcile Action */}
+        {/* Action Buttons: 1-Click Auto-Reconcile & J-SOX Export */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={() => autoReconcileMutation.mutate()}
             disabled={autoReconcileMutation.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-950/40 border border-amber-400/40 transition-all disabled:opacity-60 group active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors disabled:opacity-60"
           >
-            <Zap
-              className={`w-4 h-4 text-amber-100 ${
-                autoReconcileMutation.isPending ? 'animate-spin' : 'group-hover:scale-125'
-              } transition-transform`}
-            />
+            <Zap className={`w-3.5 h-3.5 ${autoReconcileMutation.isPending ? 'animate-spin' : ''}`} />
             <span>
-              {autoReconcileMutation.isPending
-                ? 'Sealing Cryptographic Block...'
-                : '⚡ Run 1-Click Auto-Reconcile'}
+              {autoReconcileMutation.isPending ? 'Đang niêm phong sổ cái...' : '⚡ Đối soát Tự Động (1-Click)'}
             </span>
           </button>
 
-          {/* J-SOX Audit Proof Pack Export */}
           <button
             onClick={openJsoxModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs bg-navy-800 hover:bg-navy-750 text-cyan-300 border border-cyan-500/40 shadow-sm transition-all group"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium text-xs bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-gray-700 shadow-xs transition-colors"
           >
-            <FileCheck2 className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
-            <span>📜 View &amp; Export J-SOX Audit Proof Pack</span>
+            <FileCheck2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>📜 Xuất Chứng Chỉ J-SOX 404</span>
           </button>
         </div>
       </div>
 
-      {/* Status Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {/* Card 1: Total Days / Records Inspected */}
-        <div className="p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Records Evaluated</span>
-            <Clock className="w-4 h-4 text-slate-400" />
+      {/* 5 Status Summary KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Card 1: Records Evaluated */}
+        <div className="p-3.5 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs">
+          <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Tổng Bản Ghi</span>
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-slate-900 dark:text-white">
+          <div className="mt-1.5 text-xl font-bold font-mono text-slate-900 dark:text-white">
             {summary.totalRecords}
           </div>
-          <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-            Across 10 Staff &amp; 30 Days
-          </div>
+          <div className="mt-0.5 text-[10px] text-slate-400">10 Nhân sự · 30 Ngày</div>
         </div>
 
-        {/* Card 2: Matched (Compliant) */}
-        <div className="p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-          <div className="text-xs font-semibold text-emerald-500 dark:text-emerald-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Matched (Compliant)</span>
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
+        {/* Card 2: Matched */}
+        <div className="p-3.5 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs">
+          <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+            <span>Khớp 100%</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-emerald-500 dark:text-emerald-400">
+          <div className="mt-1.5 text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
             {summary.matchedCount}
           </div>
-          <div className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-500 font-medium">
-            {summary.auditCompliantRate}% Compliance Rate
+          <div className="mt-0.5 text-[10px] text-emerald-600/80 font-medium">
+            {summary.auditCompliantRate}% Đạt chuẩn
           </div>
         </div>
 
-        {/* Card 3: Over-Logged (Fraud/Invoice Risk) */}
-        <div className="p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-          <div className="text-xs font-semibold text-rose-500 dark:text-rose-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Over-Logged</span>
-            <AlertTriangle className="w-4 h-4 text-rose-400" />
+        {/* Card 3: Over-Logged */}
+        <div className="p-3.5 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs">
+          <div className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center justify-between">
+            <span>Log Dư WBS</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-rose-500 dark:text-rose-400">
+          <div className="mt-1.5 text-xl font-bold font-mono text-rose-600 dark:text-rose-400">
             {summary.overLoggedCount}
           </div>
-          <div className="mt-1 text-[11px] text-rose-400 font-mono">
-            Risk: ${summary.potentialBillingRiskUsd.toLocaleString()}
+          <div className="mt-0.5 text-[10px] text-rose-500 font-mono">
+            Rủi ro: ${summary.potentialBillingRiskUsd.toLocaleString()}
           </div>
         </div>
 
-        {/* Card 4: Under-Logged (Effort Leakage) */}
-        <div className="p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-          <div className="text-xs font-semibold text-amber-500 dark:text-amber-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Under-Logged</span>
-            <TrendingDown className="w-4 h-4 text-amber-400" />
+        {/* Card 4: Under-Logged */}
+        <div className="p-3.5 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs">
+          <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400 flex items-center justify-between">
+            <span>Thiếu Log Công</span>
+            <TrendingDown className="w-3.5 h-3.5 text-amber-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-amber-500 dark:text-amber-400">
+          <div className="mt-1.5 text-xl font-bold font-mono text-amber-600 dark:text-amber-400">
             {summary.underLoggedCount}
           </div>
-          <div className="mt-1 text-[11px] text-amber-400 font-mono">
-            Leakage: ${summary.potentialLeakageUsd.toLocaleString()}
+          <div className="mt-0.5 text-[10px] text-amber-500 font-mono">
+            Thất thoát: ${summary.potentialLeakageUsd.toLocaleString()}
           </div>
         </div>
 
-        {/* Card 5: Missing Swipe (Security Breach) */}
-        <div className="p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-          <div className="text-xs font-semibold text-purple-500 dark:text-purple-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Missing Swipe</span>
-            <UserX className="w-4 h-4 text-purple-400" />
+        {/* Card 5: Missing Swipe */}
+        <div className="p-3.5 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs col-span-2 sm:col-span-1">
+          <div className="text-[11px] font-medium text-purple-600 dark:text-purple-400 flex items-center justify-between">
+            <span>Chưa Quẹt Thẻ</span>
+            <UserX className="w-3.5 h-3.5 text-purple-500" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-purple-500 dark:text-purple-400">
+          <div className="mt-1.5 text-xl font-bold font-mono text-purple-600 dark:text-purple-400">
             {summary.missingSwipeCount}
           </div>
-          <div className="mt-1 text-[11px] text-purple-400 font-medium">
-            Physical Security Breach
-          </div>
+          <div className="mt-0.5 text-[10px] text-purple-500 font-medium">Vi phạm An ninh FISC</div>
         </div>
       </div>
 
-      {/* Filter Bar & Language Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 shadow-sm">
-        {/* Filters */}
+      {/* Filter Bar with Status Pills & Multilingual Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 shadow-xs">
+        {/* Status Pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" /> Filter:
+            <Filter className="w-3.5 h-3.5 text-slate-400" /> Lọc:
           </span>
           <button
             onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
               statusFilter === 'ALL'
-                ? 'bg-navy-800 text-cyan-300 dark:bg-navy-750'
-                : 'text-slate-600 dark:text-slate-400 hover:text-white bg-slate-100 dark:bg-navy-850'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-gray-800'
             }`}
           >
-            All Records ({summary.totalRecords})
+            Tất cả ({summary.totalRecords})
           </button>
           <button
             onClick={() => setStatusFilter('OVER_LOGGED')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
               statusFilter === 'OVER_LOGGED'
-                ? 'bg-rose-900 text-rose-200 border border-rose-500/40'
-                : 'text-rose-500 dark:text-rose-400 hover:bg-rose-950/40 bg-slate-100 dark:bg-navy-850'
+                ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950 dark:text-rose-400 dark:border-rose-800'
+                : 'text-rose-600 border-transparent hover:bg-rose-50 dark:hover:bg-rose-950/40'
             }`}
           >
-            ⚠️ Over-Logged ({summary.overLoggedCount})
+            Log dư WBS ({summary.overLoggedCount})
           </button>
           <button
             onClick={() => setStatusFilter('UNDER_LOGGED')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
               statusFilter === 'UNDER_LOGGED'
-                ? 'bg-amber-900 text-amber-200 border border-amber-500/40'
-                : 'text-amber-500 dark:text-amber-400 hover:bg-amber-950/40 bg-slate-100 dark:bg-navy-850'
+                ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800'
+                : 'text-amber-600 border-transparent hover:bg-amber-50 dark:hover:bg-amber-950/40'
             }`}
           >
-            📉 Under-Logged ({summary.underLoggedCount})
+            Thiếu log ({summary.underLoggedCount})
           </button>
           <button
             onClick={() => setStatusFilter('MISSING_SWIPE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
               statusFilter === 'MISSING_SWIPE'
-                ? 'bg-purple-900 text-purple-200 border border-purple-500/40'
-                : 'text-purple-500 dark:text-purple-400 hover:bg-purple-950/40 bg-slate-100 dark:bg-navy-850'
+                ? 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800'
+                : 'text-purple-600 border-transparent hover:bg-purple-50 dark:hover:bg-purple-950/40'
             }`}
           >
-            🚫 Missing Swipe ({summary.missingSwipeCount})
+            Chưa quẹt thẻ ({summary.missingSwipeCount})
           </button>
           <button
             onClick={() => setStatusFilter('MATCHED')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
               statusFilter === 'MATCHED'
-                ? 'bg-emerald-900 text-emerald-200 border border-emerald-500/40'
-                : 'text-emerald-500 dark:text-emerald-400 hover:bg-emerald-950/40 bg-slate-100 dark:bg-navy-850'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800'
+                : 'text-emerald-600 border-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
             }`}
           >
-            ✅ Matched ({summary.matchedCount})
+            Khớp 100% ({summary.matchedCount})
           </button>
         </div>
 
-        {/* Multilingual Explanations Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-lg bg-slate-100 dark:bg-navy-850 border border-slate-200 dark:border-navy-800 text-xs shrink-0">
-          <Languages className="w-3.5 h-3.5 text-cyan-400 ml-1.5" />
-          <span className="text-[11px] text-slate-400 mr-1">Rule Note:</span>
+        {/* Multilingual Selector */}
+        <div className="flex items-center gap-1 p-0.5 rounded-md bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-xs shrink-0">
+          <Languages className="w-3.5 h-3.5 text-slate-500 ml-1.5" />
           <button
             onClick={() => setSelectedLang('ja')}
-            className={`px-2 py-0.5 rounded font-medium transition-colors ${
+            className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
               selectedLang === 'ja'
-                ? 'bg-navy-800 text-cyan-300 font-bold'
-                : 'text-slate-500 hover:text-white'
+                ? 'bg-white dark:bg-gray-700 text-slate-900 dark:text-white font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            日本語 (JA)
+            日本語
           </button>
           <button
             onClick={() => setSelectedLang('en')}
-            className={`px-2 py-0.5 rounded font-medium transition-colors ${
+            className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
               selectedLang === 'en'
-                ? 'bg-navy-800 text-cyan-300 font-bold'
-                : 'text-slate-500 hover:text-white'
+                ? 'bg-white dark:bg-gray-700 text-slate-900 dark:text-white font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            English (EN)
+            EN
           </button>
           <button
             onClick={() => setSelectedLang('vi')}
-            className={`px-2 py-0.5 rounded font-medium transition-colors ${
+            className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
               selectedLang === 'vi'
-                ? 'bg-navy-800 text-cyan-300 font-bold'
-                : 'text-slate-500 hover:text-white'
+                ? 'bg-white dark:bg-gray-700 text-slate-900 dark:text-white font-bold shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Tiếng Việt (VI)
+            VI
           </button>
         </div>
       </div>
 
-      {/* Reconciliation Table */}
-      <div className="rounded-2xl border border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900/90 shadow-md overflow-hidden">
+      {/* High-Density Reconciliation Table */}
+      <div className="rounded-lg border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-navy-850/90 border-b border-slate-200 dark:border-navy-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
+            <thead className="bg-slate-50 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-800 text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3 px-4">Date &amp; Staff</th>
-                <th className="py-3 px-3">Project / ODC RFID</th>
-                <th className="py-3 px-3 text-right">Physical Badge</th>
-                <th className="py-3 px-3 text-right">WBS Logged</th>
-                <th className="py-3 px-3 text-right">Delta</th>
-                <th className="py-3 px-3 text-center">Compliance Status</th>
-                <th className="py-3 px-4">Recommended Action &amp; Audit Notes</th>
+                <th className="py-3 px-3.5">Ngày &amp; Nhân Sự</th>
+                <th className="py-3 px-3">Dự Án / Thẻ RFID</th>
+                <th className="py-3 px-2.5 text-right">Giờ Quẹt Thẻ</th>
+                <th className="py-3 px-2.5 text-right">Giờ Bảng Công</th>
+                <th className="py-3 px-2.5 text-right">Chênh Lệch</th>
+                <th className="py-3 px-3 text-center">Trạng Thái</th>
+                <th className="py-3 px-3.5">Khuyến Nghị &amp; Bút Toán Đối Soát</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-navy-800 font-mono">
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800 font-mono">
               {items.map((item) => {
                 let statusBadge = {
-                  text: 'MATCHED',
-                  style: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+                  text: 'Khớp 100%',
+                  style: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800',
                 };
                 if (item.status === 'OVER_LOGGED') {
                   statusBadge = {
-                    text: 'OVER-LOGGED',
-                    style: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+                    text: 'Log dư WBS',
+                    style: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-400 dark:border-rose-800',
                   };
                 } else if (item.status === 'UNDER_LOGGED') {
                   statusBadge = {
-                    text: 'UNDER-LOGGED',
-                    style: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                    text: 'Thiếu log công',
+                    style: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800',
                   };
                 } else if (item.status === 'MISSING_SWIPE') {
                   statusBadge = {
-                    text: 'MISSING SWIPE',
-                    style: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+                    text: 'Chưa quẹt thẻ',
+                    style: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800',
                   };
                 }
 
@@ -356,16 +327,16 @@ export const OdcReconcileView: React.FC = () => {
                     key={item.id}
                     className={`transition-colors ${
                       isDiscrepancy
-                        ? 'bg-rose-500/5 dark:bg-rose-950/10 hover:bg-rose-500/10 dark:hover:bg-rose-950/20'
-                        : 'hover:bg-slate-50/60 dark:hover:bg-navy-850/50'
+                        ? 'bg-rose-50/40 dark:bg-rose-950/15 hover:bg-rose-50/70 dark:hover:bg-rose-950/25'
+                        : 'hover:bg-slate-50/60 dark:hover:bg-gray-800/40'
                     }`}
                   >
-                    {/* Date & Employee */}
-                    <td className="py-3.5 px-4 font-sans">
+                    {/* Date & Staff */}
+                    <td className="py-3 px-3.5 font-sans">
                       <div className="font-mono text-xs font-semibold text-slate-900 dark:text-white">
                         {item.date}
                       </div>
-                      <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                      <div className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">
                         {item.userName}
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -373,41 +344,41 @@ export const OdcReconcileView: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Project / ODC Card */}
-                    <td className="py-3.5 px-3">
-                      <div className="font-mono font-semibold text-cyan-500 dark:text-cyan-400">
-                        {item.projectCode || 'UNALLOCATED'}
+                    {/* Project / RFID */}
+                    <td className="py-3 px-3">
+                      <div className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+                        {item.projectCode || 'CHƯA_PHÂN_BỔ'}
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                        Card: {item.odcCardId}
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        RFID: {item.odcCardId}
                       </div>
                     </td>
 
-                    {/* Physical Badge Hours */}
-                    <td className="py-3.5 px-3 text-right">
-                      <div className="font-bold text-slate-900 dark:text-white">
+                    {/* Turnstile Hours */}
+                    <td className="py-3 px-2.5 text-right">
+                      <div className="font-bold text-slate-800 dark:text-slate-200">
                         {item.physicalHours.toFixed(1)}h
                       </div>
-                      <div className="text-[10px] text-slate-400">Turnstile RFID</div>
+                      <div className="text-[10px] text-slate-400 font-sans">Turnstile RFID</div>
                     </td>
 
-                    {/* WBS Logged Hours */}
-                    <td className="py-3.5 px-3 text-right">
-                      <div className="font-bold text-slate-900 dark:text-white">
+                    {/* WBS Hours */}
+                    <td className="py-3 px-2.5 text-right">
+                      <div className="font-bold text-slate-800 dark:text-slate-200">
                         {item.timesheetHours.toFixed(1)}h
                       </div>
-                      <div className="text-[10px] text-slate-400">Timesheet WBS</div>
+                      <div className="text-[10px] text-slate-400 font-sans">Timesheet WBS</div>
                     </td>
 
                     {/* Delta */}
-                    <td className="py-3.5 px-3 text-right">
+                    <td className="py-3 px-2.5 text-right">
                       <span
-                        className={`font-extrabold ${
+                        className={`font-bold ${
                           item.deltaHours > 0
-                            ? 'text-rose-500 dark:text-rose-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : item.deltaHours < 0
-                            ? 'text-amber-500 dark:text-amber-400'
-                            : 'text-emerald-500 dark:text-emerald-400'
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
                         {item.deltaHours > 0 ? `+${item.deltaHours}h` : `${item.deltaHours}h`}
@@ -415,26 +386,26 @@ export const OdcReconcileView: React.FC = () => {
                     </td>
 
                     {/* Compliance Status Badge */}
-                    <td className="py-3.5 px-3 text-center">
+                    <td className="py-3 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadge.style}`}
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${statusBadge.style}`}
                       >
                         {statusBadge.text}
                       </span>
                     </td>
 
-                    {/* Recommended Action & Multilingual Note */}
-                    <td className="py-3.5 px-4 font-sans text-xs">
+                    {/* Action Note */}
+                    <td className="py-3 px-3.5 font-sans text-xs">
                       <div className="text-slate-800 dark:text-slate-200 leading-snug">
                         {actionNote}
                       </div>
                       {item.violationCode && (
-                        <div className="mt-1 flex items-center gap-1.5 font-mono text-[10px] text-rose-500 dark:text-rose-400">
-                          <span className="px-1.5 py-0.2 rounded bg-rose-500/10 border border-rose-500/20">
+                        <div className="mt-1 flex items-center gap-1.5 font-mono text-[10px] text-rose-600 dark:text-rose-400">
+                          <span className="px-1.5 py-0.2 rounded bg-rose-50 border border-rose-200 dark:bg-rose-950 dark:border-rose-800">
                             {item.violationCode}
                           </span>
-                          <span className="text-slate-400 dark:text-slate-500 font-sans">
-                            (Requires PM / Auditor sign-off before invoice)
+                          <span className="text-slate-400 font-sans text-[10px]">
+                            (Yêu cầu PM xác nhận trước khi lập hóa đơn)
                           </span>
                         </div>
                       )}
