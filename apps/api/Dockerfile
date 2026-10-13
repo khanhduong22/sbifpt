@@ -26,6 +26,7 @@ COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 
 # Generate Prisma client, ensure database is seeded, and compile
+ENV DATABASE_URL="file:/app/packages/db/prisma/dev.db"
 RUN pnpm --filter @sbifpt/db generate
 RUN pnpm --filter @sbifpt/db push --accept-data-loss
 RUN pnpm --filter @sbifpt/db seed
