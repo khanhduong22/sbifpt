@@ -241,15 +241,6 @@ odcRouter.post('/api/odc/reconcile/auto', async (c) => {
     });
   }
 
-  // Cryptographically anchor this auto-reconciliation run in AuditLog
-  const lastLog = await prisma.auditLog.findFirst({
-    orderBy: { sequence: 'desc' },
-  });
-
-  const nextSequence = (lastLog?.sequence ?? 0) + 1;
-  const previousHash = lastLog?.currentHash ?? GENESIS_HASH;
-  const timestamp = new Date();
-
   // Fetch an executive or compliance actor
   const auditor = await prisma.user.findFirst({
     where: { role: 'AUDITOR' },
@@ -258,7 +249,7 @@ odcRouter.post('/api/odc/reconcile/auto', async (c) => {
 
   const details = {
     action: 'AUTO_RECONCILIATION_RUN',
-    processedAt: timestamp.toISOString(),
+    processedAt: new Date().toISOString(),
     approvedCount: entriesToApprove.length,
     flaggedCount: entriesToFlag.length,
     totalEvaluatedKeys: dateUserKeys.size,
@@ -266,26 +257,51 @@ odcRouter.post('/api/odc/reconcile/auto', async (c) => {
     fiscCompliant: true,
   };
 
-  const blockHash = computeAuditHash({
-    previousHash,
-    sequence: nextSequence,
-    timestamp,
-    action: 'AUTO_RECONCILIATION_RUN',
-    actorId,
-    detailsJson: details,
-  });
+  // Cryptographically anchor this auto-reconciliation run in AuditLog (with concurrency retry)
+  let auditEntry: any;
+  let blockHash = '';
+  let nextSequence = 1;
+  let timestamp = new Date();
 
-  const auditEntry = await prisma.auditLog.create({
-    data: {
-      sequence: nextSequence,
-      timestamp,
-      action: 'AUTO_RECONCILIATION_RUN',
-      actorId,
-      detailsJson: canonicalJsonStringify(details),
-      previousHash,
-      currentHash: blockHash,
-    },
-  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const lastLog = await prisma.auditLog.findFirst({
+        orderBy: { sequence: 'desc' },
+      });
+
+      nextSequence = (lastLog?.sequence ?? 0) + 1;
+      const previousHash = lastLog?.currentHash ?? GENESIS_HASH;
+      timestamp = new Date();
+
+      blockHash = computeAuditHash({
+        previousHash,
+        sequence: nextSequence,
+        timestamp,
+        action: 'AUTO_RECONCILIATION_RUN',
+        actorId,
+        detailsJson: details,
+      });
+
+      auditEntry = await prisma.auditLog.create({
+        data: {
+          sequence: nextSequence,
+          timestamp,
+          action: 'AUTO_RECONCILIATION_RUN',
+          actorId,
+          detailsJson: canonicalJsonStringify(details),
+          previousHash,
+          currentHash: blockHash,
+        },
+      });
+      break;
+    } catch (err: any) {
+      if (err.code === 'P2002' && attempt < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
 
   const result: AutoReconcileResult = {
     success: true,

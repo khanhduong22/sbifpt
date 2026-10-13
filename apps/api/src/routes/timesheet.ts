@@ -151,14 +151,7 @@ timesheetRouter.post('/api/timesheet/log', async (c) => {
     createdEntries.push(entry);
   }
 
-  // Cryptographically seal in AuditLog
-  const lastLog = await prisma.auditLog.findFirst({
-    orderBy: { sequence: 'desc' },
-  });
-  const nextSequence = (lastLog?.sequence ?? 0) + 1;
-  const previousHash = lastLog?.currentHash ?? GENESIS_HASH;
-  const timestamp = new Date();
-
+  // Cryptographically seal in AuditLog (with concurrency retry)
   const auditDetails = {
     action: 'TIMESHEET_LOGGED',
     userId,
@@ -168,32 +161,54 @@ timesheetRouter.post('/api/timesheet/log', async (c) => {
     totalHoursLogged: allocations.reduce((sum, a) => sum + a.hours, 0),
   };
 
-  const blockHash = computeAuditHash({
-    previousHash,
-    sequence: nextSequence,
-    timestamp,
-    action: 'TIMESHEET_LOGGED',
-    actorId: userId,
-    detailsJson: auditDetails,
-  });
+  let sealedSequence = 1;
+  let sealedBlockHash = '';
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const lastLog = await prisma.auditLog.findFirst({
+        orderBy: { sequence: 'desc' },
+      });
+      const nextSequence = (lastLog?.sequence ?? 0) + 1;
+      const previousHash = lastLog?.currentHash ?? GENESIS_HASH;
+      const timestamp = new Date();
 
-  await prisma.auditLog.create({
-    data: {
-      sequence: nextSequence,
-      timestamp,
-      action: 'TIMESHEET_LOGGED',
-      actorId: userId,
-      detailsJson: canonicalJsonStringify(auditDetails),
-      previousHash,
-      currentHash: blockHash,
-    },
-  });
+      const blockHash = computeAuditHash({
+        previousHash,
+        sequence: nextSequence,
+        timestamp,
+        action: 'TIMESHEET_LOGGED',
+        actorId: userId,
+        detailsJson: auditDetails,
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          sequence: nextSequence,
+          timestamp,
+          action: 'TIMESHEET_LOGGED',
+          actorId: userId,
+          detailsJson: canonicalJsonStringify(auditDetails),
+          previousHash,
+          currentHash: blockHash,
+        },
+      });
+      sealedSequence = nextSequence;
+      sealedBlockHash = blockHash;
+      break;
+    } catch (err: any) {
+      if (err.code === 'P2002' && attempt < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
 
   return c.json({
     success: true,
-    message: `Successfully logged ${createdEntries.length} timesheet entries. Sealed in Audit Block #${nextSequence}.`,
-    auditBlockSequence: nextSequence,
-    blockHash,
+    message: `Successfully logged ${createdEntries.length} timesheet entries. Sealed in Audit Block #${sealedSequence}.`,
+    auditBlockSequence: sealedSequence,
+    blockHash: sealedBlockHash,
     entries: createdEntries,
   });
 });
