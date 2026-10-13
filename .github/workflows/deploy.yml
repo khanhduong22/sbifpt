@@ -1,0 +1,115 @@
+name: Deploy SBI FPT Stack
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-sbifpt
+  cancel-in-progress: false
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Stage 1: Quality Gate & Automated Tests
+  # ----------------------------------------------------------------------------
+  test:
+    name: Test & Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client & seed
+        run: |
+          pnpm --filter @sbifpt/db generate
+          pnpm --filter @sbifpt/db push --accept-data-loss
+          pnpm --filter @sbifpt/db seed
+
+      - name: Run unit & integration tests
+        run: pnpm test
+
+      - name: Run TypeScript typecheck
+        run: pnpm typecheck
+
+      - name: Validate production builds
+        run: pnpm -r build
+
+      - name: Validate Docker Compose syntax
+        run: docker compose config > /dev/null
+
+  # ----------------------------------------------------------------------------
+  # Stage 2: Deploy to Contabo VPS
+  # ----------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Contabo VPS
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CONTABO_SSH_KEY }}
+          SSH_HOST: ${{ secrets.CONTABO_HOST || '144.91.88.242' }}
+        run: |
+          if [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "Skipping VPS deployment: CONTABO_SSH_KEY secret not configured."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Deploy on VPS
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST || '144.91.88.242' }}
+        run: |
+          if [ ! -f ~/.ssh/id_rsa ]; then
+            exit 0
+          fi
+          ssh root@${SSH_HOST} "bash -c '
+            set -euo pipefail
+            mkdir -p /opt/sbifpt
+            cd /opt/sbifpt
+            if [ -d .git ]; then
+              git pull origin main
+            fi
+            docker compose config >/dev/null
+            docker compose up -d --build --remove-orphans
+            docker exec caddy caddy reload --config /etc/caddy/Caddyfile || true
+          '"
+
+      - name: Verify Public Endpoint Health
+        run: |
+          echo "Probing public endpoint https://sbifpt.khanhdp.com/health..."
+          curl -s --retry 5 --retry-delay 3 https://sbifpt.khanhdp.com/health || true
