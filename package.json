@@ -7,6 +7,7 @@
     "dev": "pnpm --filter @sbifpt/api dev",
     "build": "pnpm -r build",
     "test": "vitest run",
+    "test:e2e": "vitest run tests/e2e-simulation.test.ts",
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @sbifpt/db generate",

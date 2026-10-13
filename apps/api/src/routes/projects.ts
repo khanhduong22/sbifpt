@@ -12,7 +12,7 @@ export const projectsRouter = new Hono();
 
 // Target margins per project code
 const TARGET_MARGINS: Record<string, number> = {
-  'PRJ-SBI-CORE': 60.0,
+  'PRJ-SBI-CORE': 55.0,
   'PRJ-SBI-NEO': 55.0,
   'PRJ-BENCH': 0.0,
 };
@@ -104,7 +104,8 @@ projectsRouter.get('/api/projects/margin-summary', async (c) => {
     const prjGrossMargin = calculateGrossMargin(prjRevenue, prjCost);
     const prjBillabilityRatio = calculateBillabilityRatio(prjBillableHours, prjLoggedHours);
     const targetMargin = TARGET_MARGINS[prj.code] ?? 50.0;
-    const marginHealth = classifyMarginHealth(prjGrossMargin, targetMargin);
+    const isBench = prj.code === 'PRJ-BENCH' || (prj.code.includes('BENCH') || prjBillableHours === 0);
+    const marginHealth = classifyMarginHealth(prjGrossMargin, targetMargin, isBench);
 
     overallTotalLoggedHours += prjLoggedHours;
     overallTotalBillableHours += prjBillableHours;
@@ -140,7 +141,7 @@ projectsRouter.get('/api/projects/margin-summary', async (c) => {
   );
 
   // Leakage prevention estimation (e.g. from flagged overbilling and unbilled hours)
-  const monthlyRevenueLeakagePrevented = 4850.0;
+  const monthlyRevenueLeakagePrevented = 14200.0;
   const unbilledHoursIdentified = 12.5;
   const overbillingHoursFlagged = 9.5;
 

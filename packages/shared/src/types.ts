@@ -102,7 +102,7 @@ export interface ProjectMarginSummary {
   grossProfit: number; // totalRevenue - totalCost
   grossMargin: number; // percentage (0 - 100)
   targetMargin: number; // percentage (0 - 100)
-  marginHealth: 'EXCELLENT' | 'HEALTHY' | 'WARNING' | 'CRITICAL';
+  marginHealth: 'EXCELLENT' | 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'BENCH';
 }
 
 export interface ExecutiveCompanyMetrics {
@@ -195,19 +195,26 @@ export interface LogEffortRequest {
 
 export interface CryptographicProofPack {
   chainValid: boolean;
+  isValid?: boolean;
+  tamperingDetected?: boolean;
   totalBlocks: number;
+  verifiedBlocks: number;
   merkleRoot: string;
   genesisHash: string;
   latestHash: string;
   verifiedAt: string;
   complianceStandard: string;
+  complianceStandards?: string[];
+  tamperingError?: string | null;
   auditTrail: {
     sequence: number;
     timestamp: string;
     action: string;
     actor: string;
+    actorDepartment?: string;
     hash: string;
     previousHash: string;
+    details?: Record<string, unknown> | any;
     tamperDetected: boolean;
   }[];
 }

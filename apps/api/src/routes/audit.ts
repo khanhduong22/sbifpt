@@ -75,6 +75,8 @@ auditRouter.get('/api/audit/proof-pack', async (c) => {
 
   return c.json({
     chainValid: verification.isValid,
+    isValid: verification.isValid,
+    tamperingDetected: !verification.isValid,
     totalBlocks: auditLogs.length,
     verifiedBlocks: verification.verifiedBlocks,
     merkleRoot,
@@ -82,6 +84,11 @@ auditRouter.get('/api/audit/proof-pack', async (c) => {
     latestHash: latestBlock?.currentHash ?? GENESIS_HASH,
     verifiedAt: new Date().toISOString(),
     complianceStandard: `${COMPLIANCE_STANDARDS.J_SOX} / ${COMPLIANCE_STANDARDS.ISO_27001} / ${COMPLIANCE_STANDARDS.FISC}`,
+    complianceStandards: [
+      'J-SOX Section 404',
+      'FISC Safety Standards',
+      'ISO/IEC 27001',
+    ],
     tamperingError: verification.isValid ? null : verification.errorReason,
     auditTrail,
   });

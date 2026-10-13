@@ -24,8 +24,10 @@ export function calculateBillabilityRatio(billableHours: number, totalHours: num
  */
 export function classifyMarginHealth(
   margin: number,
-  targetMargin: number
-): 'EXCELLENT' | 'HEALTHY' | 'WARNING' | 'CRITICAL' {
+  targetMargin: number,
+  isBench: boolean = false
+): 'EXCELLENT' | 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'BENCH' {
+  if (isBench) return 'BENCH';
   if (margin >= targetMargin + 5) return 'EXCELLENT';
   if (margin >= targetMargin) return 'HEALTHY';
   if (margin >= targetMargin - 10) return 'WARNING';
