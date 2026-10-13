@@ -1,0 +1,58 @@
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import { healthRouter } from './routes/health';
+import { projectsRouter } from './routes/projects';
+import { odcRouter } from './routes/odc';
+import { timesheetRouter } from './routes/timesheet';
+import { auditRouter } from './routes/audit';
+import { employeesRouter } from './routes/employees';
+
+export const app = new Hono();
+
+// Middleware
+app.use('*', logger());
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Mount routers
+app.route('/', healthRouter);
+app.route('/', projectsRouter);
+app.route('/', odcRouter);
+app.route('/', timesheetRouter);
+app.route('/', auditRouter);
+app.route('/', employeesRouter);
+
+// Root greeting
+app.get('/', (c) => {
+  return c.json({
+    message: 'SBI FPT Innovation Platform API',
+    status: 'online',
+    version: '1.0.0',
+    documentation: '/health',
+  });
+});
+
+const port = Number(process.env.PORT || 4100);
+
+// Only listen when executed directly
+if (process.env.NODE_ENV !== 'test') {
+  serve(
+    {
+      fetch: app.fetch,
+      port,
+    },
+    (info) => {
+      console.log(`🚀 SBI FPT API Server running on http://localhost:${info.port}`);
+    }
+  );
+}
+
+export default app;

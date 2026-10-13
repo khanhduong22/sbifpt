@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  name               String
+  email              String             @unique
+  role               String             @default("DEV") // EXECUTIVE, PM, DEV, AUDITOR
+  billingRatePerHour Float              @default(45.0)
+  costRatePerHour    Float              @default(18.0)
+  odcCardId          String?            @unique
+  avatarUrl          String?
+  department         String?            @default("Delivery Unit 1")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  projectMembers     ProjectMember[]
+  timesheetEntries   TimesheetEntry[]
+  odcSwipes          ODCSwipe[]
+  auditLogs          AuditLog[]
+
+  @@index([role])
+  @@index([department])
+}
+
+model Project {
+  id               String             @id @default(cuid())
+  code             String             @unique // PRJ-SBI-CORE, PRJ-SBI-NEO, PRJ-BENCH
+  name             String
+  clientName       String             // SBI Shinsei Bank, SBI NeoMobile, SBI FPT Internal
+  status           String             @default("ACTIVE") // ACTIVE, COMPLETED
+  budgetHours      Float              @default(0.0)
+  billingType      String             @default("TIME_AND_MATERIALS") // TIME_AND_MATERIALS, FIXED_PRICE
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  members          ProjectMember[]
+  timesheetEntries TimesheetEntry[]
+
+  @@index([status])
+  @@index([clientName])
+}
+
+model ProjectMember {
+  id                  String   @id @default(cuid())
+  projectId           String
+  userId              String
+  roleInProject       String   @default("DEVELOPER") // TECH_LEAD, SENIOR_DEV, COMMUNICATOR, PROJECT_MANAGER, DEVELOPER
+  allocatedPercentage Float    @default(100.0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+model TimesheetEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  projectId       String
+  date            String   // YYYY-MM-DD
+  hours           Float    // e.g. 5.5
+  taskDescription String
+  taskType        String   @default("DEV") // DEV, CODE_REVIEW, MEETING, ODC_SECURITY_TRAINING
+  isBillable      Boolean  @default(true)
+  status          String   @default("SUBMITTED") // SUBMITTED, APPROVED, FLAGGED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([projectId, date])
+  @@index([status])
+}
+
+model ODCSwipe {
+  id                 String    @id @default(cuid())
+  userId             String
+  odcCardId          String
+  swipeDate          String    // YYYY-MM-DD
+  swipeIn            DateTime
+  swipeOut           DateTime?
+  totalPhysicalHours Float     // e.g. 8.5
+  roomCode           String    @default("ODC-ROOM-7A")
+  createdAt          DateTime  @default(now())
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, swipeDate])
+  @@index([odcCardId, swipeDate])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  sequence     Int      @unique
+  timestamp    DateTime @default(now())
+  action       String
+  actorId      String?
+  detailsJson  String   // JSON stringified payload
+  previousHash String
+  currentHash  String
+
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([sequence])
+  @@index([action])
+  @@index([actorId])
+}

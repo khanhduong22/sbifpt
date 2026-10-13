@@ -1,0 +1,22 @@
+{
+  "name": "sbifpt-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @sbifpt/api dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @sbifpt/db generate",
+    "db:push": "pnpm --filter @sbifpt/db push",
+    "db:seed": "pnpm --filter @sbifpt/db seed"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}
