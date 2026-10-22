@@ -42,8 +42,8 @@ app.get('/', (c) => {
 
 const port = Number(process.env.PORT || 4100);
 
-// Only listen when executed directly
-if (process.env.NODE_ENV !== 'test') {
+// Only listen with @hono/node-server when executed in Node runtime; Bun auto-serves default export
+if (process.env.NODE_ENV !== 'test' && typeof Bun === 'undefined') {
   serve(
     {
       fetch: app.fetch,
@@ -53,6 +53,8 @@ if (process.env.NODE_ENV !== 'test') {
       console.log(`🚀 SBI FPT API Server running on http://localhost:${info.port}`);
     }
   );
+} else if (process.env.NODE_ENV !== 'test') {
+  console.log(`🚀 SBI FPT API Server running on Bun on port ${port}`);
 }
 
 export default app;

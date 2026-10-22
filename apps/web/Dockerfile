@@ -1,12 +1,13 @@
 # Multi-stage Dockerfile for @sbifpt/web
 # Stage 1: Build static assets using Vite
-FROM node:26.12.1-alpine AS builder
+FROM oven/bun:1-alpine AS builder
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g pnpm@10.32.1
+RUN bun add -g pnpm@10.32.1
 
 # Copy workspace configurations
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
