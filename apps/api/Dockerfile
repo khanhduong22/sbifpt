@@ -1,14 +1,14 @@
 # Multi-stage Dockerfile for @sbifpt/api
-# Production-ready Node.js 24 Alpine build
+# Production-ready Node.js 26 Alpine build
 
 # ----------------- Stage 1: Builder -----------------
-FROM node:24.22.1-alpine AS builder
+FROM node:26.12.1-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+RUN npm install -g pnpm@10.32.1
 
 # Copy workspace configuration and dependency manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
@@ -33,7 +33,7 @@ RUN pnpm --filter @sbifpt/db seed
 RUN pnpm --filter @sbifpt/api build
 
 # ----------------- Stage 2: Runner -----------------
-FROM node:24.22.1-alpine AS runner
+FROM node:26.12.1-alpine AS runner
 RUN apk add --no-cache curl libc6-compat openssl dumb-init
 WORKDIR /app
 
