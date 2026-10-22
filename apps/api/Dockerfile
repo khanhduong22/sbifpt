@@ -1,8 +1,8 @@
 # Multi-stage Dockerfile for @sbifpt/api
-# Production-ready Node.js 22 Alpine build
+# Production-ready Node.js 24 Alpine build
 
 # ----------------- Stage 1: Builder -----------------
-FROM node:22-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -33,7 +33,7 @@ RUN pnpm --filter @sbifpt/db seed
 RUN pnpm --filter @sbifpt/api build
 
 # ----------------- Stage 2: Runner -----------------
-FROM node:22-alpine AS runner
+FROM node:24.22.1-alpine AS runner
 RUN apk add --no-cache curl libc6-compat openssl dumb-init
 WORKDIR /app
 
