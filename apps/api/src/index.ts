@@ -43,7 +43,7 @@ app.get('/', (c) => {
 const port = Number(process.env.PORT || 4100);
 
 // Only listen with @hono/node-server when executed in Node runtime; Bun auto-serves default export
-if (process.env.NODE_ENV !== 'test' && typeof Bun === 'undefined') {
+if (process.env.NODE_ENV !== 'test' && !('Bun' in globalThis)) {
   serve(
     {
       fetch: app.fetch,
