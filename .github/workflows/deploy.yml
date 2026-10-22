@@ -1,9 +1,6 @@
 name: Deploy SBI FPT Stack
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:
